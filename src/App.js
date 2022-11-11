@@ -1,23 +1,55 @@
-import logo from './logo.svg';
-import './App.css';
+/* eslint-disable array-callback-return */
+/* eslint-disable no-unused-vars */
+import { useEffect, useState } from "react";
+import "./App.css";
+import { db } from "./firebase";
+import { uid } from "uid";
+import { onValue, ref, set } from "firebase/database";
 
 function App() {
+  const [data, setData] = useState([]);
+  const [todo, setTodo] = useState("");
+  const [todos, setTodos] = useState([]);
+
+  useEffect(() => {
+    onValue(ref(db), (snapshot) => {
+      const data = snapshot.val();
+      setTodos([]);
+      if (data !== null) {
+        Object.values(data).map((todo) => {
+          setTodos((oldArray) => [...oldArray, todo]);
+        });
+      }
+    });
+  }, []);
+
+  const handleTodoChange = (e) => {
+    setTodo(e.target.value);
+  };
+
+  const writeDatabase = () => {
+    const uuid = uid();
+    set(ref(db, `/${uuid}`), {
+      todo,
+      uuid,
+    });
+
+    setTodo("");
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <input type="text" value={todo} onChange={handleTodoChange} />
+      <button type="submit" onClick={writeDatabase}>
+        SUBMIT
+      </button>
+      {todos.map((todo) => {
+        return (
+          <>
+            <h2>{todo.todo}</h2>
+          </>
+        );
+      })}
     </div>
   );
 }
